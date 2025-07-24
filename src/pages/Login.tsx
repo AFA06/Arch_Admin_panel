@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -11,13 +13,33 @@ export default function Login() {
     email: "",
     password: ""
   });
+  const { toast } = useToast();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic validation
+    if (!credentials.email || !credentials.password) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // In a real app, this would authenticate with backend
     console.log("Login attempt:", credentials);
+    
+    toast({
+      title: "Login Successful",
+      description: "Welcome to VideoAdmin Dashboard",
+    });
+    
     // For demo purposes, redirect to dashboard
-    window.location.href = "/";
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 1000);
   };
 
   return (
@@ -82,6 +104,15 @@ export default function Login() {
               </div>
             </div>
             
+            <div className="flex items-center justify-between">
+              <Link 
+                to="/forgot-password" 
+                className="text-sm text-primary hover:text-primary-glow transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <Button
               type="submit"
               className="w-full bg-gradient-primary text-primary-foreground"
@@ -91,10 +122,22 @@ export default function Login() {
             </Button>
           </form>
           
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-4">
             <p className="text-sm text-muted-foreground">
-              Demo credentials: admin@videoadmin.com / admin123
+              Don't have an account?{" "}
+              <Link 
+                to="/signup" 
+                className="text-primary hover:text-primary-glow transition-colors font-medium"
+              >
+                Please register
+              </Link>
             </p>
+            
+            <div className="pt-4 border-t border-border">
+              <p className="text-xs text-muted-foreground">
+                Demo credentials: admin@videoadmin.com / admin123
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
