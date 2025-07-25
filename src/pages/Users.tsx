@@ -1,192 +1,110 @@
-import { useState } from "react";
-import { Search, Plus, MoreHorizontal, Crown, Shield, Trash2, UserCheck, UserX } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
-// Mock user data
-const mockUsers = [
-  { id: 1, name: "John Doe", email: "john@example.com", isPremium: true, joinDate: "2024-01-15", status: "active" },
-  { id: 2, name: "Sarah Smith", email: "sarah@example.com", isPremium: false, joinDate: "2024-02-20", status: "active" },
-  { id: 3, name: "Mike Johnson", email: "mike@example.com", isPremium: true, joinDate: "2024-01-10", status: "active" },
-  { id: 4, name: "Emma Wilson", email: "emma@example.com", isPremium: true, joinDate: "2024-03-05", status: "suspended" },
-  { id: 5, name: "David Brown", email: "david@example.com", isPremium: false, joinDate: "2024-02-28", status: "active" },
-  { id: 6, name: "Lisa Garcia", email: "lisa@example.com", isPremium: true, joinDate: "2024-01-25", status: "active" },
-];
+import { useState } from "react";
 
 export default function Users() {
-  const [users, setUsers] = useState(mockUsers);
-  const [searchTerm, setSearchTerm] = useState("");
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [gender, setGender] = useState("");
+  const [status, setStatus] = useState("");
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const {
+    data: users = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["admin-users", search, gender, status],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (gender) params.append("gender", gender);
+      if (status) params.append("status", status);
+      const res = await api.get(`/users?${params.toString()}`);
+      return res.data;
+    },
+  });
 
-  const togglePremium = (userId: number) => {
-    setUsers(users.map(user =>
-      user.id === userId ? { ...user, isPremium: !user.isPremium } : user
-    ));
-  };
+  const togglePremiumMutation = useMutation({
+    mutationFn: (id: string) => api.put(`/users/${id}/premium`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+  });
 
-  const toggleStatus = (userId: number) => {
-    setUsers(users.map(user =>
-      user.id === userId 
-        ? { ...user, status: user.status === "active" ? "suspended" : "active" }
-        : user
-    ));
-  };
+  const toggleStatusMutation = useMutation({
+    mutationFn: (id: string) => api.put(`/users/${id}/status`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+  });
 
-  const deleteUser = (userId: number) => {
-    setUsers(users.filter(user => user.id !== userId));
-  };
+  const deleteUserMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/users/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+  });
+
+  if (isLoading) return <div>Loading users...</div>;
+  if (isError) return <div>Error: {(error as Error).message}</div>;
 
   return (
     <div className="p-6 space-y-6">
-      {/* Page Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">User Management</h1>
-          <p className="text-muted-foreground">Manage your platform users and their permissions.</p>
-        </div>
-        <Button className="bg-gradient-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Add User
-        </Button>
+      <h1 className="text-2xl font-bold">User Management</h1>
+
+      <div className="flex flex-wrap gap-4 items-center">
+        <Input
+          placeholder="Search by name or email"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <select value={gender} onChange={(e) => setGender(e.target.value)} className="border px-2 py-1 rounded-md">
+          <option value="">All Genders</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+        <select value={status} onChange={(e) => setStatus(e.target.value)} className="border px-2 py-1 rounded-md">
+          <option value="">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="suspended">Suspended</option>
+        </select>
       </div>
 
-      {/* Search and Filters */}
-      <Card className="bg-card/50 backdrop-blur-sm border-border">
-        <CardContent className="p-4">
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button variant="outline">All Users</Button>
-            <Button variant="outline">Premium Only</Button>
-            <Button variant="outline">Free Users</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Users Table */}
-      <Card className="bg-card/50 backdrop-blur-sm border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground">Users ({filteredUsers.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Join Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                          {user.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-foreground">{user.name}</p>
-                        <p className="text-sm text-muted-foreground">ID: {user.id}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                  <TableCell>
-                    <Badge variant={user.status === "active" ? "default" : "destructive"}>
-                      {user.status === "active" ? (
-                        <>
-                          <UserCheck className="w-3 h-3 mr-1" />
-                          Active
-                        </>
-                      ) : (
-                        <>
-                          <UserX className="w-3 h-3 mr-1" />
-                          Suspended
-                        </>
-                      )}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.isPremium ? "default" : "secondary"}>
-                      {user.isPremium ? (
-                        <>
-                          <Crown className="w-3 h-3 mr-1" />
-                          Premium
-                        </>
-                      ) : (
-                        "Free"
-                      )}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(user.joinDate).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => togglePremium(user.id)}>
-                          <Crown className="w-4 h-4 mr-2" />
-                          {user.isPremium ? "Remove Premium" : "Make Premium"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toggleStatus(user.id)}>
-                          <Shield className="w-4 h-4 mr-2" />
-                          {user.status === "active" ? "Suspend User" : "Activate User"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => deleteUser(user.id)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete User
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Full Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Gender</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Premium</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {users.map((user: any) => (
+            <TableRow key={user.id}>
+              <TableCell>{user.name} {user.surname}</TableCell>
+              <TableCell>{user.email}</TableCell>
+              <TableCell>{user.gender}</TableCell>
+              <TableCell>{user.status}</TableCell>
+              <TableCell>{user.isPremium ? "Yes" : "No"}</TableCell>
+              <TableCell className="space-x-2">
+                <Button size="sm" variant="outline" onClick={() => togglePremiumMutation.mutate(user.id)}>
+                  {user.isPremium ? "Remove Premium" : "Make Premium"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => toggleStatusMutation.mutate(user.id)}>
+                  {user.status === "active" ? "Suspend" : "Activate"}
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => deleteUserMutation.mutate(user.id)}>
+                  Delete
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
