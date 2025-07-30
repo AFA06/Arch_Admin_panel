@@ -1,247 +1,251 @@
-import { useState } from "react";
-import { Search, Plus, MoreHorizontal, Play, Lock, Globe, Trash2, Edit, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { Upload, Eye, Trash2, Search } from "lucide-react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import {
+  Button,
+  Card,
+  CardContent,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
+  Input,
+  Label,
+  ScrollArea,
+  Textarea,
   Select,
-  SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+  SelectContent,
+} from "@/components/ui";
 
-// Mock video data
-const mockVideos = [
-  { 
-    id: 1, 
-    title: "Advanced React Patterns", 
-    description: "Learn advanced React patterns and techniques",
-    duration: "45:30", 
-    accessLevel: "premium", 
-    uploadDate: "2024-03-15",
-    views: 1250,
-    thumbnail: "/api/placeholder/300/180"
-  },
-  { 
-    id: 2, 
-    title: "JavaScript Fundamentals", 
-    description: "Master the basics of JavaScript programming",
-    duration: "32:15", 
-    accessLevel: "free", 
-    uploadDate: "2024-03-10",
-    views: 3420,
-    thumbnail: "/api/placeholder/300/180"
-  },
-  { 
-    id: 3, 
-    title: "Node.js Backend Development", 
-    description: "Build scalable backend applications with Node.js",
-    duration: "1:15:45", 
-    accessLevel: "premium", 
-    uploadDate: "2024-03-05",
-    views: 890,
-    thumbnail: "/api/placeholder/300/180"
-  },
-  { 
-    id: 4, 
-    title: "CSS Grid and Flexbox", 
-    description: "Modern CSS layout techniques explained",
-    duration: "28:20", 
-    accessLevel: "free", 
-    uploadDate: "2024-02-28",
-    views: 2100,
-    thumbnail: "/api/placeholder/300/180"
-  },
-];
+interface Video {
+  _id: string;
+  title: string;
+  description: string;
+  access: string;
+  videoUrl: string;
+}
 
 export default function Videos() {
-  const [videos, setVideos] = useState(mockVideos);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [access, setAccess] = useState("free");
+  const [search, setSearch] = useState("");
 
-  const filteredVideos = videos.filter(video =>
-    video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    video.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const { data: videos = [], isLoading } = useQuery<Video[]>({
+    queryKey: ["videos"],
+    queryFn: async () => {
+      const res = await axios.get("/api/videos");
+      return res.data.videos;
+    },
+  });
 
-  const deleteVideo = (videoId: number) => {
-    setVideos(videos.filter(video => video.id !== videoId));
+  const uploadMutation = useMutation({
+    mutationFn: async () => {
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("video", file);
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("access", access);
+      const res = await axios.post("/api/admin/videos/upload", formData);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+      resetForm();
+      setIsDialogOpen(false);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await axios.delete(`/api/videos/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+    },
+  });
+
+  const resetForm = () => {
+    setFile(null);
+    setTitle("");
+    setDescription("");
+    setAccess("free");
   };
 
+  const handleDelete = (id: string) => {
+    if (confirm("Are you sure you want to delete this video?")) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const filteredVideos = videos.filter(
+    (v) =>
+      v.title.toLowerCase().includes(search.toLowerCase()) ||
+      v.description.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Page Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Video Management</h1>
-          <p className="text-muted-foreground">Upload and manage your video content library.</p>
+    <div className="p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <h2 className="text-2xl font-bold">Videos</h2>
+
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Input
+            placeholder="Search videos..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full sm:w-64"
+          />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Upload Video</DialogTitle>
+                <DialogDescription>
+                  Drop your video file here or click to browse.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div
+                onClick={() =>
+                  document.getElementById("fileInput")?.click()
+                }
+                className="border-2 border-dashed border-gray-300 dark:border-gray-700 p-6 text-center cursor-pointer rounded"
+              >
+                {file ? (
+                  <p className="text-sm text-green-600">{file.name}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Drop your video file here or click to browse
+                  </p>
+                )}
+                <input
+                  id="fileInput"
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={(e) =>
+                    setFile(e.target.files?.[0] || null)
+                  }
+                />
+              </div>
+
+              <div className="space-y-2 mt-4">
+                <Label>Video Title</Label>
+                <Input
+                  placeholder="Enter title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+
+                <Label>Description</Label>
+                <Textarea
+                  placeholder="Enter description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+
+                <Label>Access Level</Label>
+                <Select value={access} onValueChange={setAccess}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select access" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
+                <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  disabled={!file || !title}
+                  onClick={() => uploadMutation.mutate()}
+                >
+                  Upload Video
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
-        <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-primary">
-              <Plus className="w-4 h-4 mr-2" />
-              Upload Video
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Upload New Video</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-                <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-lg font-medium text-foreground">Drop your video file here</p>
-                <p className="text-muted-foreground">or click to browse</p>
-                <Button variant="outline" className="mt-4">Choose File</Button>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="title">Video Title</Label>
-                  <Input id="title" placeholder="Enter video title" />
-                </div>
-                <div>
-                  <Label htmlFor="access">Access Level</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select access level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="free">Free</SelectItem>
-                      <SelectItem value="premium">Premium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea id="description" placeholder="Enter video description" rows={3} />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
-                <Button className="bg-gradient-primary">Upload Video</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
-      {/* Search and Filters */}
-      <Card className="bg-card/50 backdrop-blur-sm border-border">
-        <CardContent className="p-4">
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search videos by title or description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button variant="outline">All Videos</Button>
-            <Button variant="outline">Premium Only</Button>
-            <Button variant="outline">Free Videos</Button>
+      <ScrollArea className="h-[70vh]">
+        {isLoading ? (
+          <p>Loading videos...</p>
+        ) : filteredVideos.length === 0 ? (
+          <p>No videos found.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredVideos.map((video) => (
+              <Card
+                key={video._id}
+                className="bg-white dark:bg-gray-900 shadow"
+              >
+                <CardContent className="p-4">
+                  <p className="font-semibold">{video.title}</p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {video.description}
+                  </p>
+                  <p className="text-xs text-blue-500 mt-1 capitalize">
+                    Access: {video.access}
+                  </p>
+
+                  <div className="flex items-center justify-between mt-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Eye className="w-4 h-4 mr-1" />
+                          Preview
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{video.title}</DialogTitle>
+                          <DialogDescription>
+                            {video.description}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <video controls className="w-full rounded mt-4">
+                          <source src={video.videoUrl} type="video/mp4" />
+                          Your browser does not support the video tag.
+                        </video>
+                      </DialogContent>
+                    </Dialog>
+
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(video._id)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Videos Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredVideos.map((video) => (
-          <Card key={video.id} className="bg-card/50 backdrop-blur-sm border-border hover:shadow-glow transition-all duration-300">
-            <CardContent className="p-0">
-              {/* Video Thumbnail */}
-              <div className="relative aspect-video rounded-t-lg overflow-hidden bg-muted">
-                <div className="w-full h-full bg-gradient-primary flex items-center justify-center">
-                  <Play className="w-12 h-12 text-primary-foreground" />
-                </div>
-                <div className="absolute top-2 right-2">
-                  <Badge variant={video.accessLevel === "premium" ? "default" : "secondary"}>
-                    {video.accessLevel === "premium" ? (
-                      <>
-                        <Lock className="w-3 h-3 mr-1" />
-                        Premium
-                      </>
-                    ) : (
-                      <>
-                        <Globe className="w-3 h-3 mr-1" />
-                        Free
-                      </>
-                    )}
-                  </Badge>
-                </div>
-                <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
-                  {video.duration}
-                </div>
-              </div>
-
-              {/* Video Info */}
-              <div className="p-4">
-                <h3 className="font-semibold text-foreground mb-2 line-clamp-2">{video.title}</h3>
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{video.description}</p>
-                
-                <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
-                  <span>{video.views.toLocaleString()} views</span>
-                  <span>{new Date(video.uploadDate).toLocaleDateString()}</span>
-                </div>
-
-                {/* Actions */}
-                <div className="flex justify-between items-center">
-                  <Button size="sm" variant="outline">
-                    <Play className="w-3 h-3 mr-1" />
-                    Preview
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => deleteVideo(video.id)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete Video
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        )}
+      </ScrollArea>
     </div>
   );
 }
