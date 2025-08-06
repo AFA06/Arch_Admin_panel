@@ -10,7 +10,8 @@ import { Navbar } from "@/components/Navbar";
 // Pages
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
-import Videos from "./pages/Videos";
+import Videos from "./pages/videos/Videos";
+import VideoCategoryManager from "./pages/videos/VideoCategoryManager";
 import Reviews from "./pages/Reviews";
 import Payments from "./pages/Payments";
 import Announcements from "./pages/Announcements";
@@ -19,6 +20,9 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import NotFound from "./pages/NotFound";
+
+// 🛡️ Protected Route
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -43,44 +47,94 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/" element={
-            <AppLayout>
-              <Dashboard />
-            </AppLayout>
-          } />
-          <Route path="/users" element={
-            <AppLayout>
-              <Users />
-            </AppLayout>
-          } />
-          <Route path="/videos" element={
-            <AppLayout>
-              <Videos />
-            </AppLayout>
-          } />
-          <Route path="/reviews" element={
-            <AppLayout>
-              <Reviews />
-            </AppLayout>
-          } />
-          <Route path="/payments" element={
-            <AppLayout>
-              <Payments />
-            </AppLayout>
-          } />
-          <Route path="/announcements" element={
-            <AppLayout>
-              <Announcements />
-            </AppLayout>
-          } />
-          <Route path="/settings" element={
-            <AppLayout>
-              <Settings />
-            </AppLayout>
-          } />
+
+          {/* Protected Routes */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Dashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Users />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/videos"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Videos />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/videos/categories"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <VideoCategoryManager />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reviews"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Reviews />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Payments />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/announcements"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Announcements />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Settings />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

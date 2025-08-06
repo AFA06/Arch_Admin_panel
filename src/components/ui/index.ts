@@ -8,6 +8,8 @@ export * from './tooltip';
 export * from './sidebar';
 export * from './textarea';      // ✅ Add this
 export * from './select';        // ✅ Add this
+export * from './checkbox'; // ✅ Add this line
+
 
 // Explicitly rename or separate the duplicate exports
 export { Toaster as ToastToaster } from './toaster';

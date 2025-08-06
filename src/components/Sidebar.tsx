@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   BarChart3,
   Users,
@@ -11,8 +11,8 @@ import {
   Bell,
   TrendingUp,
   Shield,
-  Menu,
-  X
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import {
   Sidebar,
@@ -27,27 +27,17 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 
-const navigationItems = [
-  { title: "Dashboard", url: "/", icon: BarChart3 },
-  { title: "Users", url: "/users", icon: Users },
-  { title: "Videos", url: "/videos", icon: Video },
-  { title: "Reviews", url: "/reviews", icon: MessageSquare },
-  { title: "Payments", url: "/payments", icon: CreditCard },
-  { title: "Analytics", url: "/analytics", icon: TrendingUp },
-  { title: "Announcements", url: "/announcements", icon: Bell },
-  { title: "Security", url: "/security", icon: Shield },
-  { title: "Settings", url: "/settings", icon: Settings },
-];
-
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
-  const currentPath = location.pathname;
+  const navigate = useNavigate();
   const collapsed = state === "collapsed";
 
+  const [videoMenuOpen, setVideoMenuOpen] = useState(true);
+
   const isActive = (path: string) => {
-    if (path === "/") return currentPath === "/";
-    return currentPath.startsWith(path);
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
   };
 
   const getNavClasses = (path: string) => {
@@ -57,6 +47,11 @@ export function AppSidebar() {
         ? "bg-primary text-primary-foreground shadow-glow"
         : "text-muted-foreground hover:text-foreground hover:bg-accent"
     }`;
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin-token");
+    navigate("/login");
   };
 
   return (
@@ -84,24 +79,140 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
-              {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className={getNavClasses(item.url)}>
-                      <item.icon className="w-5 h-5 flex-shrink-0" />
-                      {!collapsed && <span className="font-medium">{item.title}</span>}
+
+              {/* Dashboard */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/" className={getNavClasses("/")}>
+                    <BarChart3 className="w-5 h-5 flex-shrink-0" />
+                    {!collapsed && <span className="font-medium">Dashboard</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Users */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/users" className={getNavClasses("/users")}>
+                    <Users className="w-5 h-5 flex-shrink-0" />
+                    {!collapsed && <span className="font-medium">Users</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Videos with submenu */}
+              <SidebarMenuItem>
+                <button
+                  onClick={() => setVideoMenuOpen(!videoMenuOpen)}
+                  className={getNavClasses("/videos")}
+                >
+                  <Video className="w-5 h-5 flex-shrink-0" />
+                  {!collapsed && (
+                    <>
+                      <span className="font-medium">Videos</span>
+                      <span className="ml-auto">
+                        {videoMenuOpen ? (
+                          <ChevronDown className="w-4 h-4" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
+                        )}
+                      </span>
+                    </>
+                  )}
+                </button>
+                {videoMenuOpen && !collapsed && (
+                  <div className="ml-8 mt-2 space-y-1">
+                    <NavLink
+                      to="/videos"
+                      className={({ isActive }) =>
+                        `block text-sm px-2 py-1 rounded-md ${
+                          isActive
+                            ? "text-primary font-medium bg-muted"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        }`
+                      }
+                    >
+                      All Videos
                     </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                    <NavLink
+                      to="/videos/categories"
+                      className={({ isActive }) =>
+                        `block text-sm px-2 py-1 rounded-md ${
+                          isActive
+                            ? "text-primary font-medium bg-muted"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        }`
+                      }
+                    >
+                      Categories
+                    </NavLink>
+                  </div>
+                )}
+              </SidebarMenuItem>
+
+              {/* Other pages */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/reviews" className={getNavClasses("/reviews")}>
+                    <MessageSquare className="w-5 h-5" />
+                    {!collapsed && <span className="font-medium">Reviews</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/payments" className={getNavClasses("/payments")}>
+                    <CreditCard className="w-5 h-5" />
+                    {!collapsed && <span className="font-medium">Payments</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/analytics" className={getNavClasses("/analytics")}>
+                    <TrendingUp className="w-5 h-5" />
+                    {!collapsed && <span className="font-medium">Analytics</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/announcements" className={getNavClasses("/announcements")}>
+                    <Bell className="w-5 h-5" />
+                    {!collapsed && <span className="font-medium">Announcements</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/security" className={getNavClasses("/security")}>
+                    <Shield className="w-5 h-5" />
+                    {!collapsed && <span className="font-medium">Security</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/settings" className={getNavClasses("/settings")}>
+                    <Settings className="w-5 h-5" />
+                    {!collapsed && <span className="font-medium">Settings</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Footer */}
+        {/* Logout */}
         <div className="mt-auto p-4 border-t border-border">
           <Button
             variant="ghost"
+            onClick={handleLogout}
             className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-accent"
           >
             <LogOut className="w-5 h-5" />
