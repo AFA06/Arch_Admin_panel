@@ -1,8 +1,7 @@
 // AdminPanel/src/pages/Videos.tsx
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { Upload, Eye, Trash2 } from "lucide-react";
 import {
   Button,
@@ -25,6 +24,7 @@ import {
   SelectContent,
   Checkbox,
 } from "@/components/ui";
+import { api } from "@/lib/api";
 
 interface Video {
   _id: string;
@@ -37,6 +37,12 @@ interface Video {
   isPreview?: boolean;
   instructor?: string;
   price?: number;
+}
+
+interface Category {
+  _id: string;
+  title: string;
+  slug: string;
 }
 
 export default function Videos() {
@@ -52,17 +58,24 @@ export default function Videos() {
   const [price, setPrice] = useState("");
   const [isPreview, setIsPreview] = useState(false);
   const [search, setSearch] = useState("");
+  const [categoryId, setCategoryId] = useState("");
 
-  // GET existing videos
-  const { data: videos = [], isLoading } = useQuery<Video[]>({
+  const { data: videos = [] } = useQuery<Video[]>({
     queryKey: ["videos"],
     queryFn: async () => {
-      const res = await axios.get("http://localhost:5050/api/videos");
+      const res = await api.get("/videos");
       return res.data.videos;
     },
   });
 
-  // POST: upload video
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const res = await api.get("/categories");
+      return res.data.categories;
+    },
+  });
+
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (!file) return;
@@ -76,11 +89,9 @@ export default function Videos() {
       formData.append("instructor", instructor);
       formData.append("isPreview", String(isPreview));
       formData.append("price", price);
+      formData.append("categoryId", categoryId);
 
-      const res = await axios.post(
-        "http://localhost:5050/api/admin/videos/upload",
-        formData
-      );
+      const res = await api.post("/admin/videos/upload", formData);
       return res.data;
     },
     onSuccess: () => {
@@ -92,7 +103,7 @@ export default function Videos() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await axios.delete(`http://localhost:5050/api/admin/videos/${id}`);
+      await api.delete(`/admin/videos/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["videos"] });
@@ -109,6 +120,7 @@ export default function Videos() {
     setInstructor("");
     setIsPreview(false);
     setPrice("");
+    setCategoryId("");
   };
 
   const filteredVideos = videos.filter(
@@ -144,7 +156,6 @@ export default function Videos() {
                 </DialogDescription>
               </DialogHeader>
 
-              {/* VIDEO FILE */}
               <div
                 onClick={() => document.getElementById("fileInput")?.click()}
                 className="border-2 border-dashed border-gray-300 dark:border-gray-700 p-6 text-center cursor-pointer rounded"
@@ -165,7 +176,6 @@ export default function Videos() {
                 />
               </div>
 
-              {/* FORM FIELDS */}
               <div className="space-y-2 mt-4">
                 <Label>Video Title</Label>
                 <Input value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -181,6 +191,20 @@ export default function Videos() {
                   <SelectContent>
                     <SelectItem value="free">Free</SelectItem>
                     <SelectItem value="premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Label>Category</Label>
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat._id} value={cat._id}>
+                        {cat.title}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
 
@@ -204,8 +228,11 @@ export default function Videos() {
 
               <div className="flex justify-end gap-2 mt-6">
                 <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                <Button disabled={!file || !title} onClick={() => uploadMutation.mutate()}>
-                  Upload Video
+                <Button
+                  disabled={!file || !title || !categoryId}
+                  onClick={() => uploadMutation.mutate()}
+                >
+                  {uploadMutation.isPending ? "Uploading..." : "Upload Video"}
                 </Button>
               </div>
             </DialogContent>
