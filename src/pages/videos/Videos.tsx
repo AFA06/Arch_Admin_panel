@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,9 @@ export default function Videos() {
 
   const [deleting, setDeleting] = useState(false);
   const [fadeOutIds, setFadeOutIds] = useState<string[]>([]);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -96,20 +100,27 @@ export default function Videos() {
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (!window.confirm("Are you sure you want to delete this category?")) return;
+  const confirmDelete = (category: Category) => {
+    setCategoryToDelete(category);
+    setDeleteDialogOpen(true);
+  };
 
-    setFadeOutIds((prev) => [...prev, categoryId]); // trigger fade out
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+
+    setFadeOutIds((prev) => [...prev, categoryToDelete._id]); // fade-out trigger
     setDeleting(true);
+
     try {
-      await new Promise((res) => setTimeout(res, 300)); // wait for fade-out animation
-      await api.delete(`/video-categories/${categoryId}`);
-      setCategories((prev) => prev.filter((cat) => cat._id !== categoryId));
-      toast.success("Category deleted");
+      await new Promise((res) => setTimeout(res, 300)); // wait for fade animation
+      await api.delete(`/video-categories/${categoryToDelete._id}`);
+      setCategories((prev) => prev.filter((cat) => cat._id !== categoryToDelete._id));
+      toast.success(`Category "${categoryToDelete.title}" deleted`);
+      setDeleteDialogOpen(false);
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete category");
-      setFadeOutIds((prev) => prev.filter((id) => id !== categoryId)); // revert if failed
+      setFadeOutIds((prev) => prev.filter((id) => id !== categoryToDelete._id));
     } finally {
       setDeleting(false);
     }
@@ -117,7 +128,7 @@ export default function Videos() {
 
   return (
     <div className="p-6">
-      {/* Header with upload button */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Available Video Courses</h2>
         <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
@@ -214,16 +225,10 @@ export default function Videos() {
                     variant="destructive"
                     size="sm"
                     className="w-full"
-                    onClick={() => handleDeleteCategory(cat._id)}
+                    onClick={() => confirmDelete(cat)}
                     disabled={deleting && fadeOutIds.includes(cat._id)}
                   >
-                    {deleting && fadeOutIds.includes(cat._id) ? (
-                      <Loader2 className="animate-spin w-4 h-4" />
-                    ) : (
-                      <>
-                        <Trash2 className="w-4 h-4 mr-1" /> Delete
-                      </>
-                    )}
+                    <Trash2 className="w-4 h-4 mr-1" /> Delete
                   </Button>
                 </div>
               </Card>
@@ -231,6 +236,40 @@ export default function Videos() {
           </div>
         )}
       </ScrollArea>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              You are about to delete{" "}
+              <span className="font-semibold">{categoryToDelete?.title}</span>.
+              This action is permanent and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="ghost"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteCategory}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <Loader2 className="animate-spin w-4 h-4 mr-2" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
