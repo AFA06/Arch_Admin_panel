@@ -9,8 +9,6 @@ import {
   Settings,
   LogOut,
   Bell,
-  TrendingUp,
-  Shield,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -150,7 +148,7 @@ export function AppSidebar() {
                 )}
               </SidebarMenuItem>
 
-              {/* Other pages */}
+              {/* Reviews */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/reviews" className={getNavClasses("/reviews")}>
@@ -160,6 +158,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
+              {/* Payments */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/payments" className={getNavClasses("/payments")}>
@@ -169,15 +168,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/analytics" className={getNavClasses("/analytics")}>
-                    <TrendingUp className="w-5 h-5" />
-                    {!collapsed && <span className="font-medium">Analytics</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
+              {/* Announcements */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/announcements" className={getNavClasses("/announcements")}>
@@ -187,15 +178,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/security" className={getNavClasses("/security")}>
-                    <Shield className="w-5 h-5" />
-                    {!collapsed && <span className="font-medium">Security</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
+              {/* Settings */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/settings" className={getNavClasses("/settings")}>
@@ -204,6 +187,7 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import Videos from "./pages/videos/Videos";
 import VideoCategoryManager from "./pages/videos/VideoCategoryManager";
+import CategoryVideos from "./pages/videos/CategoryVideos"; // ✅ NEW
 import Reviews from "./pages/Reviews";
 import Payments from "./pages/Payments";
 import Announcements from "./pages/Announcements";
@@ -32,9 +33,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => (
       <AppSidebar />
       <div className="flex-1 flex flex-col">
         <Navbar />
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto">{children}</main>
       </div>
     </div>
   </SidebarProvider>
@@ -73,6 +72,8 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+
+          {/* Videos routes */}
           <Route
             path="/videos"
             element={
@@ -93,6 +94,18 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+          {/* Dynamic category videos */}
+          <Route
+            path="/videos/:slug"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <CategoryVideos />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/reviews"
             element={
