@@ -2,7 +2,6 @@
 # Dependencies & Builds
 # ======================
 node_modules/
-dist/
 build/
 .out/
 .next/
