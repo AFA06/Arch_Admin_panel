@@ -44,7 +44,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+     <BrowserRouter basename="/Arch_Admin_panel">
+
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
