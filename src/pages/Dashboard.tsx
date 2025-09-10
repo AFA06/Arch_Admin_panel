@@ -1,34 +1,78 @@
+import { useEffect, useState } from "react";
 import { Users, Video, CreditCard, TrendingUp, TrendingDown } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from "recharts";
+import { api } from "@/lib/api";
 
-// Mock data
+// Mock user registration (can later connect to real data)
 const userRegistrationData = [
-  { month: 'Jan', users: 120 },
-  { month: 'Feb', users: 180 },
-  { month: 'Mar', users: 250 },
-  { month: 'Apr', users: 320 },
-  { month: 'May', users: 450 },
-  { month: 'Jun', users: 380 },
-];
-
-const revenueData = [
-  { month: 'Jan', revenue: 12500 },
-  { month: 'Feb', revenue: 18000 },
-  { month: 'Mar', revenue: 25000 },
-  { month: 'Apr', revenue: 32000 },
-  { month: 'May', revenue: 45000 },
-  { month: 'Jun', revenue: 38000 },
+  { month: "Jan", users: 120 },
+  { month: "Feb", users: 180 },
+  { month: "Mar", users: 250 },
+  { month: "Apr", users: 320 },
+  { month: "May", users: 450 },
+  { month: "Jun", users: 380 },
 ];
 
 export default function Dashboard() {
+  const [revenueData, setRevenueData] = useState<{ month: string; revenue: number }[]>([]);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [latestMonthRevenue, setLatestMonthRevenue] = useState(0);
+
+  useEffect(() => {
+    const fetchPayments = async () => {
+      try {
+        const res = await api.get("/payments");
+        const payments = res.data || [];
+
+        // Filter only completed payments
+        const completed = payments.filter((p: any) => p.status === "completed");
+
+        // Group by month
+        const monthly: { [key: string]: number } = {};
+        completed.forEach((p: any) => {
+          const date = new Date(p.date);
+          const month = date.toLocaleString("default", { month: "short" });
+          monthly[month] = (monthly[month] || 0) + p.amount;
+        });
+
+        // Sort months Jan–Dec
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const chartData = months.map((m) => ({ month: m, revenue: monthly[m] || 0 }));
+
+        setRevenueData(chartData);
+        setTotalRevenue(completed.reduce((sum: number, p: any) => sum + p.amount, 0));
+
+        // Get latest month revenue (last non-zero month)
+        const lastNonZero = [...chartData].reverse().find((d) => d.revenue > 0);
+        setLatestMonthRevenue(lastNonZero ? lastNonZero.revenue : 0);
+      } catch (err) {
+        console.error("Error fetching payments for dashboard:", err);
+      }
+    };
+
+    fetchPayments();
+  }, []);
+
   return (
     <div className="p-6 space-y-6">
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's what's happening with your platform.</p>
+        <p className="text-muted-foreground">
+          Welcome back! Here's what's happening with your platform.
+        </p>
       </div>
 
       {/* Stats Cards */}
@@ -56,10 +100,10 @@ export default function Dashboard() {
         />
         <StatCard
           title="Monthly Revenue"
-          value="$38,450"
-          change="-5% from last month"
-          icon={TrendingDown}
-          trend="down"
+          value={`${latestMonthRevenue.toLocaleString()} UZS`}
+          change="Based on payments"
+          icon={latestMonthRevenue > 0 ? TrendingUp : TrendingDown}
+          trend={latestMonthRevenue > 0 ? "up" : "down"}
         />
       </div>
 
@@ -76,19 +120,19 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    color: 'hsl(var(--foreground))'
-                  }} 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    color: "hsl(var(--foreground))",
+                  }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="users" 
-                  stroke="hsl(var(--primary))" 
+                <Line
+                  type="monotone"
+                  dataKey="users"
+                  stroke="hsl(var(--primary))"
                   strokeWidth={3}
-                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 6 }}
+                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -106,12 +150,12 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    color: 'hsl(var(--foreground))'
-                  }} 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    color: "hsl(var(--foreground))",
+                  }}
                 />
                 <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
