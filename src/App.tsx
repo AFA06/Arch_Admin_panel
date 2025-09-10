@@ -13,7 +13,6 @@ import Users from "./pages/Users";
 import Videos from "./pages/videos/Videos";
 import VideoCategoryManager from "./pages/videos/VideoCategoryManager";
 import CategoryVideos from "./pages/videos/CategoryVideos"; // ✅ NEW
-import Reviews from "./pages/Reviews";
 import Payments from "./pages/Payments";
 import Announcements from "./pages/Announcements";
 import Settings from "./pages/Settings";
@@ -44,11 +43,10 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-     <BrowserRouter basename="/Arch_Admin_panel">
-
+      <BrowserRouter basename="/Arch_Admin_panel">
         <Routes>
           {/* Public Routes */}
-    
+          <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
 
@@ -107,16 +105,6 @@ const App = () => (
             }
           />
 
-          <Route
-            path="/reviews"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Reviews />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
           <Route
             path="/payments"
             element={

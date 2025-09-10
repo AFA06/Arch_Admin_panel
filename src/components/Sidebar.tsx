@@ -4,7 +4,6 @@ import {
   BarChart3,
   Users,
   Video,
-  MessageSquare,
   CreditCard,
   Settings,
   LogOut,
@@ -146,16 +145,6 @@ export function AppSidebar() {
                     </NavLink>
                   </div>
                 )}
-              </SidebarMenuItem>
-
-              {/* Reviews */}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/reviews" className={getNavClasses("/reviews")}>
-                    <MessageSquare className="w-5 h-5" />
-                    {!collapsed && <span className="font-medium">Reviews</span>}
-                  </NavLink>
-                </SidebarMenuButton>
               </SidebarMenuItem>
 
               {/* Payments */}
