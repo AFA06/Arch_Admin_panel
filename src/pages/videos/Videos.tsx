@@ -1,275 +1,247 @@
-import React, { useEffect, useState } from "react";
-import { api } from "@/lib/api";
-import { toast } from "sonner";
+// AdminPanel/src/pages/Videos.tsx
+
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { Upload, Eye, Trash2 } from "lucide-react";
 import {
+  Button,
   Card,
   CardContent,
-} from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogTrigger
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
+  DialogTrigger,
+  Input,
+  Label,
+  ScrollArea,
+  Textarea,
   Select,
-  SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { Loader2, Upload, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
-import clsx from "clsx";
+  SelectValue,
+  SelectContent,
+  Checkbox,
+} from "@/components/ui";
 
-interface Category {
+interface Video {
   _id: string;
   title: string;
   description: string;
-  slug: string;
-  thumbnailUrl: string;
+  access: string;
+  videoUrl: string;
+  duration?: string;
+  thumbnail?: string;
+  isPreview?: boolean;
+  instructor?: string;
+  price?: number;
 }
 
 export default function Videos() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [uploading, setUploading] = useState(false);
-
-  const [title, setTitle] = useState("");
+  const queryClient = useQueryClient();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [categoryId, setCategoryId] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [access, setAccess] = useState("free");
+  const [duration, setDuration] = useState("");
+  const [thumbnail, setThumbnail] = useState("");
+  const [instructor, setInstructor] = useState("");
+  const [price, setPrice] = useState("");
+  const [isPreview, setIsPreview] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const [deleting, setDeleting] = useState(false);
-  const [fadeOutIds, setFadeOutIds] = useState<string[]>([]);
+  // GET existing videos
+  const { data: videos = [], isLoading } = useQuery<Video[]>({
+    queryKey: ["videos"],
+    queryFn: async () => {
+      const res = await axios.get("http://localhost:5050/api/videos");
+      return res.data.videos;
+    },
+  });
 
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.get("/video-categories");
-      setCategories(data.categories || []);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load categories");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!title || !file || !categoryId) {
-      toast.error("Please fill all fields");
-      return;
-    }
-
-    setUploading(true);
-    try {
+  // POST: upload video
+  const uploadMutation = useMutation({
+    mutationFn: async () => {
+      if (!file) return;
       const formData = new FormData();
+      formData.append("video", file);
       formData.append("title", title);
-      formData.append("file", file);
-      formData.append("categoryId", categoryId);
+      formData.append("description", description);
+      formData.append("access", access);
+      formData.append("duration", duration);
+      formData.append("thumbnail", thumbnail);
+      formData.append("instructor", instructor);
+      formData.append("isPreview", String(isPreview));
+      formData.append("price", price);
 
-      await api.post("/videos/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await axios.post(
+        "http://localhost:5050/api/admin/videos/upload",
+        formData
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+      resetForm();
+      setIsDialogOpen(false);
+    },
+  });
 
-      toast.success("Video uploaded successfully");
-      setUploadOpen(false);
-      setTitle("");
-      setFile(null);
-      setCategoryId("");
-      fetchCategories();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to upload video");
-    } finally {
-      setUploading(false);
-    }
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await axios.delete(`http://localhost:5050/api/admin/videos/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+    },
+  });
+
+  const resetForm = () => {
+    setFile(null);
+    setTitle("");
+    setDescription("");
+    setAccess("free");
+    setDuration("");
+    setThumbnail("");
+    setInstructor("");
+    setIsPreview(false);
+    setPrice("");
   };
 
-  const confirmDelete = (category: Category) => {
-    setCategoryToDelete(category);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteCategory = async () => {
-    if (!categoryToDelete) return;
-
-    setFadeOutIds((prev) => [...prev, categoryToDelete._id]); // fade-out trigger
-    setDeleting(true);
-
-    try {
-      await new Promise((res) => setTimeout(res, 300)); // wait for fade animation
-      await api.delete(`/video-categories/${categoryToDelete._id}`);
-      setCategories((prev) => prev.filter((cat) => cat._id !== categoryToDelete._id));
-      toast.success(`Category "${categoryToDelete.title}" deleted`);
-      setDeleteDialogOpen(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete category");
-      setFadeOutIds((prev) => prev.filter((id) => id !== categoryToDelete._id));
-    } finally {
-      setDeleting(false);
-    }
-  };
+  const filteredVideos = videos.filter(
+    (v) =>
+      v.title.toLowerCase().includes(search.toLowerCase()) ||
+      v.description.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Available Video Courses</h2>
-        <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Upload className="w-4 h-4" /> Upload Video
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upload a New Video</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Video Title</Label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter video title"
-                />
-              </div>
-              <div>
-                <Label>Video File</Label>
-                <Input
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <h2 className="text-2xl font-bold">Videos</h2>
+
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Input
+            placeholder="Search videos..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full sm:w-64"
+          />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg overflow-y-auto max-h-[90vh]">
+              <DialogHeader>
+                <DialogTitle>Upload Video</DialogTitle>
+                <DialogDescription>
+                  Add your video and details.
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* VIDEO FILE */}
+              <div
+                onClick={() => document.getElementById("fileInput")?.click()}
+                className="border-2 border-dashed border-gray-300 dark:border-gray-700 p-6 text-center cursor-pointer rounded"
+              >
+                {file ? (
+                  <p className="text-sm text-green-600">{file.name}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Drop your video file here or click to browse
+                  </p>
+                )}
+                <input
+                  id="fileInput"
                   type="file"
                   accept="video/*"
+                  className="hidden"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                 />
               </div>
-              <div>
-                <Label>Select Category</Label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
+
+              {/* FORM FIELDS */}
+              <div className="space-y-2 mt-4">
+                <Label>Video Title</Label>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+
+                <Label>Description</Label>
+                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+
+                <Label>Access</Label>
+                <Select value={access} onValueChange={setAccess}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose a category" />
+                    <SelectValue placeholder="Select access" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat._id} value={cat._id}>
-                        {cat.title}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Label>Duration</Label>
+                <Input value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="e.g. 10:45" />
+
+                <Label>Instructor</Label>
+                <Input value={instructor} onChange={(e) => setInstructor(e.target.value)} />
+
+                <Label>Thumbnail URL</Label>
+                <Input value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} />
+
+                <Label>Price (UZS)</Label>
+                <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+
+                <div className="flex items-center gap-2 mt-2">
+                  <Checkbox id="isPreview" checked={isPreview} onCheckedChange={() => setIsPreview(!isPreview)} />
+                  <Label htmlFor="isPreview">Mark as Preview Video</Label>
+                </div>
               </div>
-              <Button
-                className="w-full"
-                onClick={handleUpload}
-                disabled={uploading}
-              >
-                {uploading && <Loader2 className="animate-spin w-4 h-4 mr-2" />}
-                Upload
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+
+              <div className="flex justify-end gap-2 mt-6">
+                <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                <Button disabled={!file || !title} onClick={() => uploadMutation.mutate()}>
+                  Upload Video
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {/* Categories grid */}
-      <ScrollArea className="h-[75vh]">
-        {loading ? (
-          <div className="flex justify-center items-center h-full">
-            <Loader2 className="animate-spin w-6 h-6 text-gray-500" />
-            <span className="ml-2">Loading categories...</span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {categories.map((cat) => (
-              <Card
-                key={cat._id}
-                className={clsx(
-                  "transition-all duration-300",
-                  fadeOutIds.includes(cat._id) && "opacity-0 translate-y-3"
-                )}
-              >
-                <Link to={`/videos/${cat.slug}`}>
-                  <CardContent className="p-4">
-                    {cat.thumbnailUrl ? (
-                      <img
-                        src={cat.thumbnailUrl}
-                        alt={cat.title}
-                        className="w-full h-40 object-cover rounded-md mb-3"
-                      />
-                    ) : (
-                      <div className="w-full h-40 bg-gray-200 flex items-center justify-center text-gray-500 rounded-md mb-3">
-                        No Image
-                      </div>
-                    )}
-                    <h3 className="text-lg font-semibold">{cat.title}</h3>
-                    <p className="text-sm text-gray-600">{cat.description}</p>
-                  </CardContent>
-                </Link>
-                <div className="px-4 pb-4">
+      <ScrollArea className="h-[70vh]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {filteredVideos.map((video) => (
+            <Card key={video._id}>
+              <CardContent className="p-4 space-y-2">
+                <video src={video.videoUrl} controls className="w-full h-40 object-cover rounded" />
+                <h3 className="font-semibold">{video.title}</h3>
+                <p className="text-sm text-muted-foreground">{video.description}</p>
+                <div className="flex justify-between mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(video.videoUrl, "_blank")}
+                  >
+                    <Eye className="w-4 h-4 mr-1" /> Preview
+                  </Button>
                   <Button
                     variant="destructive"
                     size="sm"
-                    className="w-full"
-                    onClick={() => confirmDelete(cat)}
-                    disabled={deleting && fadeOutIds.includes(cat._id)}
+                    onClick={() => deleteMutation.mutate(video._id)}
                   >
                     <Trash2 className="w-4 h-4 mr-1" /> Delete
                   </Button>
                 </div>
-              </Card>
-            ))}
-          </div>
-        )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </ScrollArea>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-red-600">Confirm Deletion</DialogTitle>
-            <DialogDescription>
-              You are about to delete{" "}
-              <span className="font-semibold">{categoryToDelete?.title}</span>.
-              This action is permanent and cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="ghost"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteCategory}
-              disabled={deleting}
-            >
-              {deleting ? (
-                <Loader2 className="animate-spin w-4 h-4 mr-2" />
-              ) : (
-                <Trash2 className="w-4 h-4 mr-2" />
-              )}
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

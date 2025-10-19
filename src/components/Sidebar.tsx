@@ -4,12 +4,16 @@ import {
   BarChart3,
   Users,
   Video,
+  MessageSquare,
   CreditCard,
   Settings,
   LogOut,
   Bell,
+  TrendingUp,
+  Shield,
   ChevronDown,
   ChevronRight,
+  GraduationCap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -97,6 +101,16 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
+              {/* Courses */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/courses" className={getNavClasses("/courses")}>
+                    <GraduationCap className="w-5 h-5 flex-shrink-0" />
+                    {!collapsed && <span className="font-medium">Courses</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
               {/* Videos with submenu */}
               <SidebarMenuItem>
                 <button
@@ -147,7 +161,16 @@ export function AppSidebar() {
                 )}
               </SidebarMenuItem>
 
-              {/* Payments */}
+              {/* Other pages */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/reviews" className={getNavClasses("/reviews")}>
+                    <MessageSquare className="w-5 h-5" />
+                    {!collapsed && <span className="font-medium">Reviews</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/payments" className={getNavClasses("/payments")}>
@@ -157,7 +180,15 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Announcements */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/analytics" className={getNavClasses("/analytics")}>
+                    <TrendingUp className="w-5 h-5" />
+                    {!collapsed && <span className="font-medium">Analytics</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/announcements" className={getNavClasses("/announcements")}>
@@ -167,7 +198,15 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Settings */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/security" className={getNavClasses("/security")}>
+                    <Shield className="w-5 h-5" />
+                    {!collapsed && <span className="font-medium">Security</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/settings" className={getNavClasses("/settings")}>
@@ -176,7 +215,6 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

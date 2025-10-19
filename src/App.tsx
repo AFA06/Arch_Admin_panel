@@ -12,7 +12,9 @@ import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import Videos from "./pages/videos/Videos";
 import VideoCategoryManager from "./pages/videos/VideoCategoryManager";
-import CategoryVideos from "./pages/videos/CategoryVideos"; // ✅ NEW
+import CourseManager from "./pages/courses/CourseManager";
+import CourseEditor from "./pages/courses/CourseEditor";
+import Reviews from "./pages/Reviews.tsx";
 import Payments from "./pages/Payments";
 import Announcements from "./pages/Announcements";
 import Settings from "./pages/Settings";
@@ -32,7 +34,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => (
       <AppSidebar />
       <div className="flex-1 flex flex-col">
         <Navbar />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto">
+          {children}
+        </main>
       </div>
     </div>
   </SidebarProvider>
@@ -43,7 +47,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter basename="/Arch_Admin_panel">
+      <BrowserRouter>
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -71,8 +75,6 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-
-          {/* Videos routes */}
           <Route
             path="/videos"
             element={
@@ -93,18 +95,36 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-          {/* Dynamic category videos */}
           <Route
-            path="/videos/:slug"
+            path="/courses"
             element={
               <ProtectedRoute>
                 <AppLayout>
-                  <CategoryVideos />
+                  <CourseManager />
                 </AppLayout>
               </ProtectedRoute>
             }
           />
-
+          <Route
+            path="/courses/:id"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <CourseEditor />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reviews"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Reviews />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/payments"
             element={

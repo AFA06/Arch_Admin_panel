@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AddUserModal } from "../components/userspage/AddUserModal";
-import { api } from "@/lib/api";
+import { AssignCourseModal } from "../components/userspage/AssignCourseModal";
+import { api, userAPI } from "@/lib/api";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -13,12 +14,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Search, Plus, MoreHorizontal, X } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Users() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [plan, setPlan] = useState("");
   const [showAddUser, setShowAddUser] = useState(false);
+  const [showAssignCourse, setShowAssignCourse] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const queryKey = ["admin-users", search, plan];
 
   const {
@@ -63,33 +68,52 @@ export default function Users() {
   });
 
   const grantCourseMutation = useMutation({
-    mutationFn: ({ userId, courseSlug }: { userId: string; courseSlug: string }) =>
-      api.post(`/users/${userId}/grant-course`, { courseSlug }),
-    onSuccess: () => {
+    mutationFn: ({ userId, courseId }: { userId: string; courseId: string }) =>
+      userAPI.grantCourseAccess(userId, courseId),
+    onSuccess: (response) => {
       invalidateAll();
-      alert("✅ Course access granted!");
+      setShowAssignCourse(false);
+      toast({
+        title: "Success",
+        description: response.data.message || "Course access granted successfully",
+      });
     },
     onError: (err: any) => {
-      alert(err?.response?.data?.error || "❌ Failed to grant access");
+      toast({
+        title: "Error",
+        description: err?.response?.data?.error || "Failed to grant course access",
+        variant: "destructive",
+      });
     },
   });
 
   const revokeCourseMutation = useMutation({
-  mutationFn: ({ userId, courseSlug }: { userId: string; courseSlug: string }) =>
-    api.post(`/users/${userId}/remove-course`, { courseSlug }),
-  onSuccess: () => {
-    invalidateAll();
-    alert("✅ Course access removed!");
-  },
-  onError: (err: any) => {
-    alert(err?.response?.data?.error || "❌ Failed to remove course access");
-  },
-});
+    mutationFn: ({ userId, courseId }: { userId: string; courseId: string }) =>
+      userAPI.removeCourseAccess(userId, courseId),
+    onSuccess: (response) => {
+      invalidateAll();
+      toast({
+        title: "Success",
+        description: response.data.message || "Course access removed successfully",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.error || "Failed to remove course access",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const handleGrantCourse = (userId: string) => {
-    const courseSlug = window.prompt("Enter the course slug (e.g., '3d-design'):");
-    if (courseSlug) {
-      grantCourseMutation.mutate({ userId, courseSlug });
+  const handleOpenAssignCourse = (user: any) => {
+    setSelectedUser(user);
+    setShowAssignCourse(true);
+  };
+
+  const handleAssignCourse = (courseId: string) => {
+    if (selectedUser) {
+      grantCourseMutation.mutate({ userId: selectedUser.id, courseId });
     }
   };
 
@@ -199,23 +223,25 @@ export default function Users() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {user.purchasedCourses?.length > 0 ? (
-                      user.purchasedCourses.map((slug: string) => (
-                        <Badge key={slug} className="mr-1 bg-blue-600 text-white flex items-center gap-1">
-                          {slug}
-                          <X
-                            className="w-3 h-3 cursor-pointer"
-                            onClick={() => {
-                              if (confirm(`Remove course "${slug}" from user ${user.name}?`)) {
-                                revokeCourseMutation.mutate({ userId: user.id, courseSlug: slug });
-                              }
-                            }}
-                          />
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-muted-foreground">Free</span>
-                    )}
+                    <div className="flex flex-wrap gap-1">
+                      {user.purchasedCourses?.length > 0 ? (
+                        user.purchasedCourses.map((courseId: string) => (
+                          <Badge key={courseId} variant="secondary" className="flex items-center gap-1">
+                            Course
+                            <X
+                              className="w-3 h-3 cursor-pointer hover:text-destructive"
+                              onClick={() => {
+                                if (confirm(`Remove this course from ${user.name}?`)) {
+                                  revokeCourseMutation.mutate({ userId: user.id, courseId });
+                                }
+                              }}
+                            />
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground">No courses</span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</TableCell>
                   <TableCell>
@@ -226,13 +252,17 @@ export default function Users() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleGrantCourse(user.id)}>
-                          Grant Access to Course
+                        <DropdownMenuItem onClick={() => handleOpenAssignCourse(user)}>
+                          Assign Course
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => toggleStatusMutation.mutate(user.id)}>
                           {user.status === "active" ? "Suspend" : "Activate"}
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => deleteUserMutation.mutate(user.id)}>
+                        <DropdownMenuItem className="text-destructive" onClick={() => {
+                          if (confirm(`Are you sure you want to delete ${user.name}?`)) {
+                            deleteUserMutation.mutate(user.id);
+                          }
+                        }}>
                           Delete User
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -249,6 +279,17 @@ export default function Users() {
         open={showAddUser}
         onClose={() => setShowAddUser(false)}
         onSubmit={(formData) => addUserMutation.mutate(formData)}
+      />
+
+      <AssignCourseModal
+        open={showAssignCourse}
+        onClose={() => {
+          setShowAssignCourse(false);
+          setSelectedUser(null);
+        }}
+        onAssign={handleAssignCourse}
+        userName={selectedUser?.name || ""}
+        isSubmitting={grantCourseMutation.isPending}
       />
     </div>
   );
