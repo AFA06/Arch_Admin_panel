@@ -4,12 +4,12 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  // This tells Vite to generate asset URLs relative to your repo path on GitHub Pages
-  base: "/Arch_Admin_panel/",
+  // ✅ Changed from "/Arch_Admin_panel/" to "/"
+  base: "/",
 
   server: {
     host: "::",
-    port: 8080,
+    port: 8080, // or 8081 if you prefer
   },
 
   plugins: [
@@ -23,7 +23,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
 
-  // Build options for GitHub Pages
   build: {
     outDir: "dist",
     emptyOutDir: true,
