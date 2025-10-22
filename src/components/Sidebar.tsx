@@ -1,18 +1,13 @@
-import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   BarChart3,
   Users,
   Video,
-  MessageSquare,
   CreditCard,
   Settings,
   LogOut,
   Bell,
-  TrendingUp,
   Shield,
-  ChevronDown,
-  ChevronRight,
   GraduationCap,
 } from "lucide-react";
 import {
@@ -33,8 +28,6 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const collapsed = state === "collapsed";
-
-  const [videoMenuOpen, setVideoMenuOpen] = useState(true);
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
@@ -111,80 +104,12 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Videos with submenu */}
-              <SidebarMenuItem>
-                <button
-                  onClick={() => setVideoMenuOpen(!videoMenuOpen)}
-                  className={getNavClasses("/videos")}
-                >
-                  <Video className="w-5 h-5 flex-shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="font-medium">Videos</span>
-                      <span className="ml-auto">
-                        {videoMenuOpen ? (
-                          <ChevronDown className="w-4 h-4" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4" />
-                        )}
-                      </span>
-                    </>
-                  )}
-                </button>
-                {videoMenuOpen && !collapsed && (
-                  <div className="ml-8 mt-2 space-y-1">
-                    <NavLink
-                      to="/videos"
-                      className={({ isActive }) =>
-                        `block text-sm px-2 py-1 rounded-md ${
-                          isActive
-                            ? "text-primary font-medium bg-muted"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                        }`
-                      }
-                    >
-                      All Videos
-                    </NavLink>
-                    <NavLink
-                      to="/videos/categories"
-                      className={({ isActive }) =>
-                        `block text-sm px-2 py-1 rounded-md ${
-                          isActive
-                            ? "text-primary font-medium bg-muted"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                        }`
-                      }
-                    >
-                      Categories
-                    </NavLink>
-                  </div>
-                )}
-              </SidebarMenuItem>
-
-              {/* Other pages */}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/reviews" className={getNavClasses("/reviews")}>
-                    <MessageSquare className="w-5 h-5" />
-                    {!collapsed && <span className="font-medium">Reviews</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
+              {/* Payments */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/payments" className={getNavClasses("/payments")}>
                     <CreditCard className="w-5 h-5" />
                     {!collapsed && <span className="font-medium">Payments</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/analytics" className={getNavClasses("/analytics")}>
-                    <TrendingUp className="w-5 h-5" />
-                    {!collapsed && <span className="font-medium">Analytics</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

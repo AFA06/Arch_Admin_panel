@@ -13,18 +13,29 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, Plus, MoreHorizontal, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Users() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [plan, setPlan] = useState("");
   const [showAddUser, setShowAddUser] = useState(false);
   const [showAssignCourse, setShowAssignCourse] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const queryKey = ["admin-users", search, plan];
+  
+  // ✅ TASK 5: Debounced live search with 300ms delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+  
+  const queryKey = ["admin-users", debouncedSearch, plan];
 
   const {
     data: users = [],
@@ -35,7 +46,7 @@ export default function Users() {
     queryKey,
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (search) params.append("search", search);
+      if (debouncedSearch) params.append("search", debouncedSearch);
       if (plan) params.append("plan", plan);
       const res = await api.get(`/users?${params.toString()}`);
       return res.data;

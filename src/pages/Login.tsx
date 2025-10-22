@@ -7,12 +7,15 @@ import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAdminAuth } from "@/context/AdminAuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("admin@videoadmin.com");
   const [password, setPassword] = useState("admin123");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { login } = useAdminAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,29 +30,40 @@ export default function Login() {
     }
 
     try {
+      setLoading(true);
       const res = await axios.post("http://localhost:5050/api/admin/auth/login", {
         email,
         password,
       });
 
-      // ✅ Store token using the correct key
-      localStorage.setItem("admin-token", res.data.token);
+      if (res.data.success) {
+        // Use the auth context to store user data
+        login(res.data.user, res.data.token);
 
-      toast({
-        title: "Login Successful",
-        description: "Redirecting to dashboard...",
-      });
+        toast({
+          title: "Login Successful",
+          description: "Redirecting to dashboard...",
+        });
 
-      // ✅ Optional delay — can remove if you want instant redirect
-      setTimeout(() => {
-        navigate("/");
-      }, 1000);
+        // Check if there's a return URL
+        const returnUrl = localStorage.getItem("admin-return-after-login");
+        if (returnUrl) {
+          localStorage.removeItem("admin-return-after-login");
+          navigate(returnUrl);
+        } else {
+          navigate("/");
+        }
+      } else {
+        throw new Error(res.data.message || "Login failed");
+      }
     } catch (err: any) {
       toast({
         title: "Login Failed",
-        description: err.response?.data?.message || "Server error",
+        description: err.response?.data?.message || err.message || "Server error",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,9 +88,9 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={loading}>
           <LogIn className="mr-2 w-4 h-4" />
-          Login
+          {loading ? "Logging in..." : "Login"}
         </Button>
       </form>
     </div>

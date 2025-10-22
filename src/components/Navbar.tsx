@@ -1,4 +1,4 @@
-import { Bell, Search, User, Settings } from "lucide-react";
+import { Bell, Search, User, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -11,8 +11,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { useAdminAuth } from "@/context/AdminAuthContext";
+import { useNavigate } from "react-router-dom";
 
 export function Navbar() {
+  const { user, logout } = useAdminAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/login";
+  };
+
   return (
     <header className="h-16 border-b border-border bg-card/50 backdrop-blur-xl sticky top-0 z-40">
       <div className="flex h-full items-center justify-between px-6">
@@ -46,24 +56,21 @@ export function Navbar() {
                   <User className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-foreground">Admin</p>
-                  <p className="text-xs text-muted-foreground">admin@videoadmin.com</p>
+                  <p className="text-sm font-medium text-foreground">Abdulazim</p>
+                  <p className="text-xs text-muted-foreground">{user?.email || "abdukarimovabdulazimxon001@gmail.com"}</p>
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>
             </DropdownMenuContent>

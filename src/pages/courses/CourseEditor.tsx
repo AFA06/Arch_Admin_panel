@@ -360,15 +360,21 @@ export default function CourseEditor() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price ($)</Label>
+                    <Label htmlFor="price">Price (UZS) *</Label>
                     <Input
                       id="price"
                       type="number"
                       value={courseFormData.price}
                       onChange={(e) => setCourseFormData({ ...courseFormData, price: e.target.value })}
                       min="0"
-                      step="0.01"
+                      step="1"
+                      required
                     />
+                    {courseFormData.price && (
+                      <p className="text-sm text-muted-foreground">
+                        Preview: {parseInt(courseFormData.price).toLocaleString('uz-UZ')} UZS
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">

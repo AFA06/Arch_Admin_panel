@@ -4,17 +4,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/Sidebar";
+import { AppSidebar } from "@/components/Sidebar.tsx";
 import { Navbar } from "@/components/Navbar";
+import { AdminAuthProvider } from "@/context/AdminAuthContext";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
-import Videos from "./pages/videos/Videos";
-import VideoCategoryManager from "./pages/videos/VideoCategoryManager";
 import CourseManager from "./pages/courses/CourseManager";
 import CourseEditor from "./pages/courses/CourseEditor";
-import Reviews from "./pages/Reviews.tsx";
 import Payments from "./pages/Payments";
 import Announcements from "./pages/Announcements";
 import Settings from "./pages/Settings";
@@ -25,6 +23,7 @@ import NotFound from "./pages/NotFound";
 
 // 🛡️ Protected Route
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminProtectedRoute from "@/components/AdminProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -47,7 +46,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <AdminAuthProvider>
+        <BrowserRouter>
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -58,108 +58,79 @@ const App = () => (
           <Route
             path="/"
             element={
-              <ProtectedRoute>
+              <AdminProtectedRoute>
                 <AppLayout>
                   <Dashboard />
                 </AppLayout>
-              </ProtectedRoute>
+              </AdminProtectedRoute>
             }
           />
           <Route
             path="/users"
             element={
-              <ProtectedRoute>
+              <AdminProtectedRoute>
                 <AppLayout>
                   <Users />
                 </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/videos"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Videos />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/videos/categories"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <VideoCategoryManager />
-                </AppLayout>
-              </ProtectedRoute>
+              </AdminProtectedRoute>
             }
           />
           <Route
             path="/courses"
             element={
-              <ProtectedRoute>
+              <AdminProtectedRoute>
                 <AppLayout>
                   <CourseManager />
                 </AppLayout>
-              </ProtectedRoute>
+              </AdminProtectedRoute>
             }
           />
           <Route
             path="/courses/:id"
             element={
-              <ProtectedRoute>
+              <AdminProtectedRoute>
                 <AppLayout>
                   <CourseEditor />
                 </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/reviews"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Reviews />
-                </AppLayout>
-              </ProtectedRoute>
+              </AdminProtectedRoute>
             }
           />
           <Route
             path="/payments"
             element={
-              <ProtectedRoute>
+              <AdminProtectedRoute>
                 <AppLayout>
                   <Payments />
                 </AppLayout>
-              </ProtectedRoute>
+              </AdminProtectedRoute>
             }
           />
           <Route
             path="/announcements"
             element={
-              <ProtectedRoute>
+              <AdminProtectedRoute>
                 <AppLayout>
                   <Announcements />
                 </AppLayout>
-              </ProtectedRoute>
+              </AdminProtectedRoute>
             }
           />
           <Route
             path="/settings"
             element={
-              <ProtectedRoute>
+              <AdminProtectedRoute>
                 <AppLayout>
                   <Settings />
                 </AppLayout>
-              </ProtectedRoute>
+              </AdminProtectedRoute>
             }
           />
 
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
+        </BrowserRouter>
+      </AdminAuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -14,56 +14,74 @@ import {
   Bar,
 } from "recharts";
 import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock user registration (can later connect to real data)
-const userRegistrationData = [
-  { month: "Jan", users: 120 },
-  { month: "Feb", users: 180 },
-  { month: "Mar", users: 250 },
-  { month: "Apr", users: 320 },
-  { month: "May", users: 450 },
-  { month: "Jun", users: 380 },
-];
+interface DashboardStats {
+  totalUsers: { value: number; change: string; trend: string };
+  premiumUsers: { value: number; change: string; trend: string };
+  totalVideos: { value: number; change: string; trend: string };
+  monthlyRevenue: { value: number; change: string; trend: string };
+}
+
+interface ChartData {
+  month: string;
+  users?: number;
+  revenue?: number;
+}
 
 export default function Dashboard() {
-  const [revenueData, setRevenueData] = useState<{ month: string; revenue: number }[]>([]);
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [latestMonthRevenue, setLatestMonthRevenue] = useState(0);
+  const { toast } = useToast();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: { value: 0, change: "", trend: "up" },
+    premiumUsers: { value: 0, change: "", trend: "up" },
+    totalVideos: { value: 0, change: "", trend: "up" },
+    monthlyRevenue: { value: 0, change: "", trend: "up" },
+  });
+  const [userRegistrationData, setUserRegistrationData] = useState<ChartData[]>([]);
+  const [revenueData, setRevenueData] = useState<ChartData[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPayments = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const res = await api.get("/payments");
-        const payments = res.data || [];
-
-        // Filter only completed payments
-        const completed = payments.filter((p: any) => p.status === "completed");
-
-        // Group by month
-        const monthly: { [key: string]: number } = {};
-        completed.forEach((p: any) => {
-          const date = new Date(p.date);
-          const month = date.toLocaleString("default", { month: "short" });
-          monthly[month] = (monthly[month] || 0) + p.amount;
+        setLoading(true);
+        const res = await api.get("/dashboard/stats");
+        
+        if (res.data.success) {
+          const { stats: statsData, charts } = res.data.data;
+          setStats(statsData);
+          setUserRegistrationData(charts.userRegistrations);
+          setRevenueData(charts.revenue);
+        }
+      } catch (err: any) {
+        console.error("Error fetching dashboard data:", err);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data",
+          variant: "destructive",
         });
-
-        // Sort months Jan–Dec
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const chartData = months.map((m) => ({ month: m, revenue: monthly[m] || 0 }));
-
-        setRevenueData(chartData);
-        setTotalRevenue(completed.reduce((sum: number, p: any) => sum + p.amount, 0));
-
-        // Get latest month revenue (last non-zero month)
-        const lastNonZero = [...chartData].reverse().find((d) => d.revenue > 0);
-        setLatestMonthRevenue(lastNonZero ? lastNonZero.revenue : 0);
-      } catch (err) {
-        console.error("Error fetching payments for dashboard:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchPayments();
-  }, []);
+    fetchDashboardData();
+
+    // Refresh data every 60 seconds
+    const interval = setInterval(fetchDashboardData, 60000);
+    return () => clearInterval(interval);
+  }, [toast]);
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -79,31 +97,31 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Users"
-          value="12,847"
-          change="+12% from last month"
+          value={stats.totalUsers.value.toLocaleString()}
+          change={stats.totalUsers.change}
           icon={Users}
-          trend="up"
+          trend={stats.totalUsers.trend as "up" | "down"}
         />
         <StatCard
           title="Premium Users"
-          value="3,241"
-          change="+8% from last month"
+          value={stats.premiumUsers.value.toLocaleString()}
+          change={stats.premiumUsers.change}
           icon={CreditCard}
-          trend="up"
+          trend={stats.premiumUsers.trend as "up" | "down"}
         />
         <StatCard
           title="Total Videos"
-          value="1,523"
-          change="+15 new this week"
+          value={stats.totalVideos.value.toLocaleString()}
+          change={stats.totalVideos.change}
           icon={Video}
-          trend="up"
+          trend={stats.totalVideos.trend as "up" | "down"}
         />
         <StatCard
           title="Monthly Revenue"
-          value={`${latestMonthRevenue.toLocaleString()} UZS`}
-          change="Based on payments"
-          icon={latestMonthRevenue > 0 ? TrendingUp : TrendingDown}
-          trend={latestMonthRevenue > 0 ? "up" : "down"}
+          value={`${stats.monthlyRevenue.value.toLocaleString()} UZS`}
+          change={stats.monthlyRevenue.change}
+          icon={stats.monthlyRevenue.trend === "up" ? TrendingUp : TrendingDown}
+          trend={stats.monthlyRevenue.trend as "up" | "down"}
         />
       </div>
 

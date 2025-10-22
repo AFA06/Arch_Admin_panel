@@ -277,16 +277,22 @@ export default function CourseManager() {
               <div className="grid grid-cols-2 gap-4">
                 {/* Price */}
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price ($)</Label>
+                  <Label htmlFor="price">Price (UZS) *</Label>
                   <Input
                     id="price"
                     type="number"
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="0"
+                    placeholder="1250000"
                     min="0"
-                    step="0.01"
+                    step="1"
+                    required
                   />
+                  {formData.price && (
+                    <p className="text-sm text-muted-foreground">
+                      Preview: {parseInt(formData.price).toLocaleString('uz-UZ')} UZS
+                    </p>
+                  )}
                 </div>
 
                 {/* Level */}
@@ -464,7 +470,7 @@ export default function CourseManager() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Price:</span>
-                    <span className="font-semibold">${course.price}</span>
+                    <span className="font-semibold">{course.price.toLocaleString('uz-UZ')} UZS</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Videos:</span>

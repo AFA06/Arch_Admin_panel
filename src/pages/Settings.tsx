@@ -7,9 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
+  const { toast } = useToast();
   const [showApiKeys, setShowApiKeys] = useState(false);
+  
   const [settings, setSettings] = useState({
     businessName: "VideoAdmin Premium",
     contactEmail: "admin@videoadmin.com",
@@ -35,7 +38,10 @@ export default function Settings() {
   const handleSave = () => {
     // In a real app, this would save to backend
     console.log("Saving settings:", settings);
-    // Show success toast
+    toast({
+      title: "Success",
+      description: "Settings saved successfully",
+    });
   };
 
   return (
