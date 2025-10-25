@@ -27,6 +27,7 @@ interface Course {
   videos: any[];
   studentsEnrolled: number;
   isActive: boolean;
+  accessDuration?: number; // Duration in months (6, 9, or 12)
 }
 
 export default function CourseManager() {
@@ -51,11 +52,13 @@ export default function CourseManager() {
     instructor: "",
     level: "beginner",
     totalDuration: "",
+    accessDuration: "12", // Default to 12 months
     videoUrl: "",
     videoTitle: "",
     videoDuration: "",
   });
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchCourses();
@@ -102,11 +105,11 @@ export default function CourseManager() {
       return;
     }
 
-    // For single video type, require video URL
-    if (formData.type === "single" && !formData.videoUrl) {
+    // For single video type, require either URL or file
+    if (formData.type === "single" && !formData.videoUrl && !formData.videoFile) {
       toast({
         title: "Validation Error",
-        description: "Video URL is required for single video courses",
+        description: "Video URL or video file is required for single video courses",
         variant: "destructive",
       });
       return;
@@ -124,10 +127,17 @@ export default function CourseManager() {
       data.append("instructor", formData.instructor || "");
       data.append("level", formData.level);
       data.append("totalDuration", formData.totalDuration || "0 hours");
+      data.append("accessDuration", formData.accessDuration);
       data.append("thumbnail", thumbnailFile);
 
       if (formData.type === "single") {
-        data.append("videoUrl", formData.videoUrl);
+        if (videoFile) {
+          // It's a file upload
+          data.append("video", videoFile);
+        } else {
+          // It's a URL
+          data.append("videoUrl", formData.videoUrl);
+        }
         data.append("videoTitle", formData.videoTitle || formData.title);
         data.append("videoDuration", formData.videoDuration || "0:00");
       }
@@ -149,12 +159,14 @@ export default function CourseManager() {
         instructor: "",
         level: "beginner",
         totalDuration: "",
+        accessDuration: "12",
         videoUrl: "",
         videoTitle: "",
         videoDuration: "",
       });
       setThumbnailFile(null);
       setThumbnailPreview("");
+      setVideoFile(null);
       setIsCreateDialogOpen(false);
       
       fetchCourses();
@@ -170,15 +182,17 @@ export default function CourseManager() {
   };
 
   const handleDeleteCourse = async (courseId: string, courseTitle: string) => {
-    if (!confirm(`Are you sure you want to delete "${courseTitle}"?`)) {
+    if (!confirm(`Are you sure you want to delete "${courseTitle}"? This will also remove the course from all users who have purchased it.`)) {
       return;
     }
 
     try {
-      await courseAPI.deleteCourse(courseId);
+      const response = await courseAPI.deleteCourse(courseId);
+      const { data } = response.data;
+
       toast({
-        title: "Success",
-        description: "Course deleted successfully",
+        title: "Course Deleted Successfully",
+        description: `Course "${data.courseTitle}" has been deleted and removed from ${data.usersAffected} users.`,
       });
       fetchCourses();
     } catch (error: any) {
@@ -346,23 +360,82 @@ export default function CourseManager() {
                 />
               </div>
 
+              {/* Access Duration */}
+              <div className="space-y-2">
+                <Label htmlFor="accessDuration">Access Duration *</Label>
+                <Select value={formData.accessDuration} onValueChange={(value) => setFormData({ ...formData, accessDuration: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select access duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="6">6 Months</SelectItem>
+                    <SelectItem value="9">9 Months</SelectItem>
+                    <SelectItem value="12">1 Year (12 Months)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Students will have access to this course for the selected duration after purchase or assignment.
+                </p>
+              </div>
+
               {/* Single Video Fields */}
               {formData.type === "single" && (
                 <>
                   <div className="border-t pt-4">
                     <h3 className="font-semibold mb-3">Video Details</h3>
-                    
+
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="videoUrl">Video URL *</Label>
-                        <Input
-                          id="videoUrl"
-                          value={formData.videoUrl}
-                          onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-                          placeholder="https://example.com/video.mp4"
-                          required={formData.type === "single"}
-                        />
+                        <Label>Upload Method *</Label>
+                        <Select value={formData.videoUrl ? "url" : "file"} onValueChange={(value) => {
+                          if (value === "file") {
+                            setFormData({ ...formData, videoUrl: "" });
+                          } else {
+                            setFormData({ ...formData, videoUrl: "" });
+                          }
+                        }}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select upload method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="url">Video URL</SelectItem>
+                            <SelectItem value="file">Upload File</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
+
+                      {formData.videoUrl || (!formData.videoUrl && !formData.videoFile) ? (
+                        <div className="space-y-2">
+                          <Label htmlFor="videoUrl">Video URL *</Label>
+                          <Input
+                            id="videoUrl"
+                            value={formData.videoUrl}
+                            onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                            placeholder="https://example.com/video.mp4"
+                            required
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Label htmlFor="videoFile">Video File *</Label>
+                          <Input
+                            id="videoFile"
+                            type="file"
+                            accept="video/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                // Set a temporary URL-like string for validation
+                                setFormData({ ...formData, videoUrl: `file:${file.name}` });
+                              }
+                            }}
+                            required
+                          />
+                          <p className="text-sm text-muted-foreground">
+                            Supported formats: MP4, MOV, AVI, WebM (max 500MB)
+                          </p>
+                        </div>
+                      )}
 
                       <div className="space-y-2">
                         <Label htmlFor="videoTitle">Video Title</Label>

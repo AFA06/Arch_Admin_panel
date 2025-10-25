@@ -48,7 +48,7 @@ export default function Users() {
       const params = new URLSearchParams();
       if (debouncedSearch) params.append("search", debouncedSearch);
       if (plan) params.append("plan", plan);
-      const res = await api.get(`/users?${params.toString()}`);
+      const res = await userAPI.getUsers({ search: debouncedSearch, plan });
       return res.data;
     },
   });
@@ -58,23 +58,53 @@ export default function Users() {
   };
 
   const toggleStatusMutation = useMutation({
-    mutationFn: (id: string) => api.put(`/users/${id}/status`),
-    onSuccess: invalidateAll,
+    mutationFn: (id: string) => userAPI.toggleStatus(id),
+    onSuccess: (response) => {
+      invalidateAll();
+      toast({
+        title: "Success",
+        description: response?.data?.message || "User status updated successfully",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.error || err?.response?.data?.message || "Failed to update user status",
+        variant: "destructive",
+      });
+    },
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/users/${id}`),
-    onSuccess: invalidateAll,
+    mutationFn: (id: string) => userAPI.deleteUser(id),
+    onSuccess: (response) => {
+      invalidateAll();
+      toast({
+        title: "Success",
+        description: response?.data?.message || "User deleted successfully",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.error || err?.response?.data?.message || "Failed to delete user",
+        variant: "destructive",
+      });
+    },
   });
 
   const addUserMutation = useMutation({
-    mutationFn: (data: any) => api.post("/users", data),
+    mutationFn: (data: any) => userAPI.addUser(data),
     onSuccess: () => {
       invalidateAll();
       setShowAddUser(false);
     },
     onError: (err: any) => {
-      alert(err?.response?.data?.error || "Failed to add user");
+      toast({
+        title: "Error",
+        description: err?.response?.data?.error || "Failed to add user",
+        variant: "destructive",
+      });
     },
   });
 
@@ -86,13 +116,13 @@ export default function Users() {
       setShowAssignCourse(false);
       toast({
         title: "Success",
-        description: response.data.message || "Course access granted successfully",
+        description: response?.data?.message || "Course access granted successfully",
       });
     },
     onError: (err: any) => {
       toast({
         title: "Error",
-        description: err?.response?.data?.error || "Failed to grant course access",
+        description: err?.response?.data?.error || err?.response?.data?.message || "Failed to grant course access",
         variant: "destructive",
       });
     },
@@ -105,13 +135,13 @@ export default function Users() {
       invalidateAll();
       toast({
         title: "Success",
-        description: response.data.message || "Course access removed successfully",
+        description: response?.data?.message || "Course access removed successfully",
       });
     },
     onError: (err: any) => {
       toast({
         title: "Error",
-        description: err?.response?.data?.error || "Failed to remove course access",
+        description: err?.response?.data?.error || err?.response?.data?.message || "Failed to remove course access",
         variant: "destructive",
       });
     },

@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 
 export default function Login() {
-  const [email, setEmail] = useState("admin@videoadmin.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("abdukarimovabdulazimxon001@gmail.com");
+  const [password, setPassword] = useState("TopomisanIshonvur$Topib12KorchiYellowgrass123$");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();

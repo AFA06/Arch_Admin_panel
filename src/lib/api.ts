@@ -79,30 +79,51 @@ export const courseAPI = {
 // User Management APIs
 export const userAPI = {
   // Get all users
-  getUsers: (params?: { search?: string; status?: string; plan?: string }) => 
+  getUsers: (params?: { search?: string; status?: string; plan?: string }) =>
     api.get("/users", { params }),
 
   // Get available courses for assignment
-  getAvailableCourses: () => 
+  getAvailableCourses: () =>
     api.get("/users/courses"),
 
   // Grant course access
-  grantCourseAccess: (userId: string, courseId: string) => 
+  grantCourseAccess: (userId: string, courseId: string) =>
     api.post(`/users/${userId}/grant-course`, { courseId }),
 
   // Remove course access
-  removeCourseAccess: (userId: string, courseId: string) => 
+  removeCourseAccess: (userId: string, courseId: string) =>
     api.post(`/users/${userId}/remove-course`, { courseId }),
 
   // Toggle user status
-  toggleStatus: (userId: string) => 
+  toggleStatus: (userId: string) =>
     api.put(`/users/${userId}/status`),
 
   // Delete user
-  deleteUser: (userId: string) => 
+  deleteUser: (userId: string) =>
     api.delete(`/users/${userId}`),
 
   // Add user
-  addUser: (userData: any) => 
+  addUser: (userData: any) =>
     api.post("/users", userData),
+};
+
+// Payment Management APIs
+export const paymentAPI = {
+  // Get all payments with filtering and pagination
+  getAllPayments: (params?: {
+    month?: string;
+    year?: string;
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => api.get("/payments", { params }),
+
+  // Get payment statistics
+  getPaymentStats: (params?: { month?: string; year?: string }) =>
+    api.get("/payments/stats", { params }),
+
+  // Get available months for filtering
+  getAvailableMonths: () =>
+    api.get("/payments/months"),
 };
