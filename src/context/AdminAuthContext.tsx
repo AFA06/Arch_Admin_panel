@@ -5,6 +5,8 @@ export interface AdminUser {
   id: string;
   email: string;
   isAdmin: boolean;
+  adminRole?: 'main' | 'company';
+  companyId?: string;
   name?: string;
   surname?: string;
   image?: string;

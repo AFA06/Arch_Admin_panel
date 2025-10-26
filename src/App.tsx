@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import CourseManager from "./pages/courses/CourseManager";
 import CourseEditor from "./pages/courses/CourseEditor";
+import Companies from "./pages/Companies";
 import Payments from "./pages/Payments";
 import Announcements from "./pages/Announcements";
 import Settings from "./pages/Settings";
@@ -23,7 +24,7 @@ import NotFound from "./pages/NotFound";
 
 // 🛡️ Protected Route
 import ProtectedRoute from "@/components/ProtectedRoute";
-import AdminProtectedRoute from "@/components/AdminProtectedRoute";
+import AdminProtectedRoute, { MainAdminProtectedRoute } from "@/components/AdminProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -68,31 +69,41 @@ const App = () => (
           <Route
             path="/users"
             element={
-              <AdminProtectedRoute>
+              <MainAdminProtectedRoute>
                 <AppLayout>
                   <Users />
                 </AppLayout>
-              </AdminProtectedRoute>
+              </MainAdminProtectedRoute>
             }
           />
           <Route
             path="/courses"
             element={
-              <AdminProtectedRoute>
+              <MainAdminProtectedRoute>
                 <AppLayout>
                   <CourseManager />
                 </AppLayout>
-              </AdminProtectedRoute>
+              </MainAdminProtectedRoute>
             }
           />
           <Route
             path="/courses/:id"
             element={
-              <AdminProtectedRoute>
+              <MainAdminProtectedRoute>
                 <AppLayout>
                   <CourseEditor />
                 </AppLayout>
-              </AdminProtectedRoute>
+              </MainAdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/companies"
+            element={
+              <MainAdminProtectedRoute>
+                <AppLayout>
+                  <Companies />
+                </AppLayout>
+              </MainAdminProtectedRoute>
             }
           />
           <Route
@@ -108,21 +119,21 @@ const App = () => (
           <Route
             path="/announcements"
             element={
-              <AdminProtectedRoute>
+              <MainAdminProtectedRoute>
                 <AppLayout>
                   <Announcements />
                 </AppLayout>
-              </AdminProtectedRoute>
+              </MainAdminProtectedRoute>
             }
           />
           <Route
             path="/settings"
             element={
-              <AdminProtectedRoute>
+              <MainAdminProtectedRoute>
                 <AppLayout>
                   <Settings />
                 </AppLayout>
-              </AdminProtectedRoute>
+              </MainAdminProtectedRoute>
             }
           />
 

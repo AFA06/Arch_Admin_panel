@@ -9,7 +9,9 @@ import {
   Bell,
   Shield,
   GraduationCap,
+  Building,
 } from "lucide-react";
+import { useAdminAuth } from "@/context/AdminAuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -28,6 +30,10 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const collapsed = state === "collapsed";
+  const { user } = useAdminAuth();
+
+  // Check if user is a company admin (limited access)
+  const isCompanyAdmin = user?.adminRole === 'company';
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
@@ -74,7 +80,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
 
-              {/* Dashboard */}
+              {/* Dashboard - Available to all admins */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/" className={getNavClasses("/")}>
@@ -84,27 +90,42 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Users */}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/users" className={getNavClasses("/users")}>
-                    <Users className="w-5 h-5 flex-shrink-0" />
-                    {!collapsed && <span className="font-medium">Users</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {/* Main Admin Only Menu Items */}
+              {!isCompanyAdmin && (
+                <>
+                  {/* Users */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/users" className={getNavClasses("/users")}>
+                        <Users className="w-5 h-5 flex-shrink-0" />
+                        {!collapsed && <span className="font-medium">Users</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
 
-              {/* Courses */}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/courses" className={getNavClasses("/courses")}>
-                    <GraduationCap className="w-5 h-5 flex-shrink-0" />
-                    {!collapsed && <span className="font-medium">Courses</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+                  {/* Courses */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/courses" className={getNavClasses("/courses")}>
+                        <GraduationCap className="w-5 h-5 flex-shrink-0" />
+                        {!collapsed && <span className="font-medium">Courses</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
 
-              {/* Payments */}
+                  {/* Companies */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/companies" className={getNavClasses("/companies")}>
+                        <Building className="w-5 h-5 flex-shrink-0" />
+                        {!collapsed && <span className="font-medium">Companies</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
+              )}
+
+              {/* Payments - Available to all admins */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/payments" className={getNavClasses("/payments")}>
@@ -114,32 +135,37 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/announcements" className={getNavClasses("/announcements")}>
-                    <Bell className="w-5 h-5" />
-                    {!collapsed && <span className="font-medium">Announcements</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {/* Main Admin Only Menu Items */}
+              {!isCompanyAdmin && (
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/announcements" className={getNavClasses("/announcements")}>
+                        <Bell className="w-5 h-5" />
+                        {!collapsed && <span className="font-medium">Announcements</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/security" className={getNavClasses("/security")}>
-                    <Shield className="w-5 h-5" />
-                    {!collapsed && <span className="font-medium">Security</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/security" className={getNavClasses("/security")}>
+                        <Shield className="w-5 h-5" />
+                        {!collapsed && <span className="font-medium">Security</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/settings" className={getNavClasses("/settings")}>
-                    <Settings className="w-5 h-5" />
-                    {!collapsed && <span className="font-medium">Settings</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/settings" className={getNavClasses("/settings")}>
+                        <Settings className="w-5 h-5" />
+                        {!collapsed && <span className="font-medium">Settings</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

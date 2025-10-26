@@ -127,3 +127,48 @@ export const paymentAPI = {
   getAvailableMonths: () =>
     api.get("/payments/months"),
 };
+
+// Company Management APIs
+export const companyAPI = {
+  // Get all companies
+  getCompanies: (params?: { search?: string; status?: string }) =>
+    api.get("/companies", { params }),
+
+  // Create company
+  createCompany: (companyData: {
+    name: string;
+    description?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+  }) => api.post("/companies", companyData),
+
+  // Update company
+  updateCompany: (companyId: string, companyData: {
+    name?: string;
+    description?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    isActive?: boolean;
+  }) => api.put(`/companies/${companyId}`, companyData),
+
+  // Toggle company status
+  toggleCompanyStatus: (companyId: string) =>
+    api.put(`/companies/${companyId}/toggle-status`),
+
+  // Get company stats
+  getCompanyStats: (companyId: string) =>
+    api.get(`/companies/${companyId}/stats`),
+
+  // Delete company
+  deleteCompany: (companyId: string) =>
+    api.delete(`/companies/${companyId}`),
+
+  // Create company admin
+  createCompanyAdmin: (adminData: {
+    name: string;
+    surname?: string;
+    email: string;
+    password: string;
+    companyId: string;
+  }) => api.post("/users/create-company-admin", adminData),
+};

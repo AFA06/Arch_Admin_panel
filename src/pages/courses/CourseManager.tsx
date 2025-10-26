@@ -1,7 +1,7 @@
 // src/pages/courses/CourseManager.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { courseAPI } from "@/lib/api";
+import { courseAPI, companyAPI } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Edit, Trash2, Video, PackageOpen, Loader2 } from "lucide-react";
+import { useAdminAuth } from "@/context/AdminAuthContext";
 
 interface Course {
   _id: string;
@@ -53,15 +54,23 @@ export default function CourseManager() {
     level: "beginner",
     totalDuration: "",
     accessDuration: "12", // Default to 12 months
+    ownerType: "platform", // "platform" or "company"
+    companyId: "",
     videoUrl: "",
     videoTitle: "",
     videoDuration: "",
   });
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [companies, setCompanies] = useState<any[]>([]);
+
+  const { user } = useAdminAuth();
 
   useEffect(() => {
     fetchCourses();
+    if (user?.adminRole === 'main') {
+      fetchCompanies();
+    }
   }, [filterType]);
 
   const fetchCourses = async () => {
@@ -78,6 +87,15 @@ export default function CourseManager() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await companyAPI.getCompanies();
+      setCompanies(response.data);
+    } catch (error: any) {
+      console.error("Failed to fetch companies:", error);
     }
   };
 
@@ -128,6 +146,10 @@ export default function CourseManager() {
       data.append("level", formData.level);
       data.append("totalDuration", formData.totalDuration || "0 hours");
       data.append("accessDuration", formData.accessDuration);
+      data.append("ownerType", formData.ownerType);
+      if (formData.ownerType === "company" && formData.companyId) {
+        data.append("companyId", formData.companyId);
+      }
       data.append("thumbnail", thumbnailFile);
 
       if (formData.type === "single") {
@@ -160,6 +182,8 @@ export default function CourseManager() {
         level: "beginner",
         totalDuration: "",
         accessDuration: "12",
+        ownerType: "platform",
+        companyId: "",
         videoUrl: "",
         videoTitle: "",
         videoDuration: "",
@@ -247,6 +271,46 @@ export default function CourseManager() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Owner Type - Only for main admin */}
+              {user?.adminRole === 'main' && (
+                <div className="space-y-2">
+                  <Label htmlFor="ownerType">Owner Type *</Label>
+                  <Select value={formData.ownerType} onValueChange={(value) => setFormData({ ...formData, ownerType: value, companyId: value === 'platform' ? '' : formData.companyId })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select owner type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="platform">Platform</SelectItem>
+                      <SelectItem value="company">Company</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    {formData.ownerType === 'platform'
+                      ? 'Course owned by the platform (100% revenue)'
+                      : 'Course owned by a company (50/50 revenue split)'}
+                  </p>
+                </div>
+              )}
+
+              {/* Company Selection - Only show if owner type is company and user is main admin */}
+              {user?.adminRole === 'main' && formData.ownerType === 'company' && (
+                <div className="space-y-2">
+                  <Label htmlFor="companyId">Company *</Label>
+                  <Select value={formData.companyId} onValueChange={(value) => setFormData({ ...formData, companyId: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company._id} value={company._id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Title */}
               <div className="space-y-2">
